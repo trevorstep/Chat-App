@@ -1,14 +1,25 @@
-import socket  
+import socket
+import os
+from dotenv import load_dotenv
 
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
-client_socket.connect(("localhost", 12345))  
+# Load .env variables
+load_dotenv()
+HOST = "127.0.0.1"  # or use os.getenv("SERVER_IP")
+PORT = int(os.getenv("PORT", "5000"))
 
-while True:  
-    message = input("Enter message: ")  
-    if message.lower() == "exit":  
-        break  
-    client_socket.sendall(message.encode())   
-    data = client_socket.recv(1024) 
-    print(f"Server: {data.decode()}")  
+def run_client():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
+        client_socket.connect((HOST, PORT))
+        print(f"Connected to server at {HOST}:{PORT}")
 
-client_socket.close()  
+        while True:
+            message = input("Enter command (time, hello, or quit): ").strip()
+            if message.lower() == "quit":
+                break
+
+            client_socket.sendall(message.encode())
+            response = client_socket.recv(1024).decode()
+            print("Response:", response)
+
+if __name__ == "__main__":
+    run_client()

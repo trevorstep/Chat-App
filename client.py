@@ -6,29 +6,21 @@ def receive_messages(sock):
         try:
             data = sock.recv(1024)
             if not data:
-                print("Server disconnected.")
                 break
-            print(f"\nServer: {data.decode()}")
+            print(data.decode())
         except:
             break
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect(("localhost", 12345))
 
-# Start receiver thread
-receiver = threading.Thread(target=receive_messages, args=(client_socket,))
-receiver.start()
+# Thread to receive messages
+threading.Thread(target=receive_messages, args=(client_socket,), daemon=True).start()
 
-# Main thread for sending messages
-try:
-    while True:
-        message = input()
-        if message.lower() == "exit":
-            break
-        client_socket.sendall(message.encode())
-except:
-    pass
+while True:
+    msg = input()
+    if msg.lower() == "exit":
+        break
+    client_socket.sendall(msg.encode())
 
 client_socket.close()
-print("Client closed.")
-

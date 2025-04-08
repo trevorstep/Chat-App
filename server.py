@@ -1,39 +1,38 @@
 import socket
 import threading
 
-def receive_messages(conn):
-    while True:
-        try:
-            data = conn.recv(1024)
-            if not data:
-                print("Client disconnected.")
-                break
-            print(f"\nClient: {data.decode()}")
-        except:
-            break
-
+# Set up server
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind(("localhost", 12345))
-server_socket.listen(1)
+server_socket.listen()
 
-print("Server is listening...")
-conn, addr = server_socket.accept()
-print(f"Connected by {addr}")
+print("Server is listening on localhost:12345")
 
-# Start receiver thread
-receiver = threading.Thread(target=receive_messages, args=(conn,))
-receiver.start()
+clients = {}  # Keep track of client sockets and usernames
 
-# Main thread for sending messages
-try:
-    while True:
-        message = input()
-        if message.lower() == "exit":
-            break
-        conn.sendall(message.encode())
-except:
-    pass
+def handle_client(conn, addr):
+    try:
+        # Ask for username
+        conn.sendall("Enter your username: ".encode())
+        username = conn.recv(1024).decode().strip()
+        clients[conn] = username
+        print(f"{username} connected from {addr}")
 
-conn.close()
-server_socket.close()
-print("Server closed.")
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            message = data.decode()
+            print(f"{username}: {message}")
+            conn.sendall(f"{username}: {message}".encode())
+    except ConnectionResetError:
+        print(f"{clients.get(conn, 'Unknown')} disconnected unexpectedly.")
+    finally:
+        print(f"{clients.get(conn, 'A user')} has disconnected.")
+        conn.close()
+        clients.pop(conn, None)
+
+# Accept clients forever
+while True:
+    conn, addr = server_socket.accept()
+    threading.Thread(target=handle_client, args=(conn, addr), daemon=True).start()

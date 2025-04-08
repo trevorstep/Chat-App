@@ -7,7 +7,7 @@ server_socket.listen()
 
 print("Server is listening on localhost:12345")
 
-clients = {}  # conn: username
+clients = {} 
 
 def broadcast(message, sender_conn=None):
     for client_conn in clients:
@@ -40,7 +40,6 @@ def handle_client(conn, addr):
         conn.close()
         clients.pop(conn, None)
 
-# Accept clients forever
 while True:
     conn, addr = server_socket.accept()
     threading.Thread(target=handle_client, args=(conn, addr), daemon=True).start()
